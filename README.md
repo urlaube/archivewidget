@@ -6,4 +6,3 @@ Place the folder containing the plugin into your plugins directory located at `.
 
 ## Configuration
 At the moment this plugin has no configuration.
-
