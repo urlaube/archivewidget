@@ -7,7 +7,7 @@
     displays a monthly archive.
 
     @package urlaube\archivewidget
-    @version 0.1a1
+    @version 0.1a2
     @author  Yahe <hello@yahe.sh>
     @since   0.1a0
   */
@@ -50,41 +50,44 @@
       $result = null;
 
       $dates = [];
+      if (!getcache(null, $dates, static::class)) {
+        FilePlugin::loadContentDir(USER_CONTENT_PATH, true,
+                                   function ($content) use (&$dates) {
+                                     $result = null;
 
-      FilePlugin::loadContentDir(USER_CONTENT_PATH, true,
-                                 function ($content) use (&$dates) {
-                                   $result = null;
+                                     // check that $content is not hidden
+                                     if (!istrue(value($content, HIDDEN))) {
+                                       // check that $content is not hidden from archive
+                                       if (!istrue(value($content, HIDDENFROMARCHIVE))) {
+                                         // check that $content is not a relocation
+                                         if (null === value($content, RELOCATE)) {
+                                           // read the date
+                                           $datevalue = value($content, DATE);
+                                           if (null !== $datevalue) {
+                                             $time = strtotime($datevalue);
 
-                                   // check that $content is not hidden
-                                   if (!istrue(value($content, HIDDEN))) {
-                                     // check that $content is not hidden from archive
-                                     if (!istrue(value($content, HIDDENFROMARCHIVE))) {
-                                       // check that $content is not a relocation
-                                       if (null === value($content, RELOCATE)) {
-                                         // read the date
-                                         $datevalue = value($content, DATE);
-                                         if (null !== $datevalue) {
-                                           $time = strtotime($datevalue);
+                                             // only proceed if DATE is parsable
+                                             if (false !== $time) {
+                                               $date  = getdate($time);
+                                               $index = $date["year"].SP.str_pad($date["mon"], 2, "0", STR_PAD_LEFT);
 
-                                           // only proceed if DATE is parsable
-                                           if (false !== $time) {
-                                             $date  = getdate($time);
-                                             $index = $date["year"].SP.str_pad($date["mon"], 2, "0", STR_PAD_LEFT);
-
-                                             if (isset($dates[$index])) {
-                                               $dates[$index]++;
-                                             } else {
-                                               $dates[$index] = 1;
+                                               if (isset($dates[$index])) {
+                                                 $dates[$index]++;
+                                               } else {
+                                                 $dates[$index] = 1;
+                                               }
                                              }
                                            }
                                          }
                                        }
                                      }
-                                   }
 
-                                   return null;
-                                 },
-                                 true);
+                                     return null;
+                                   },
+                                   true);
+
+        setcache(null, $dates, static::class);
+      }
 
       if (0 < count($dates)) {
         // sort the dates
@@ -108,7 +111,7 @@
 
         $result = new Content();
         $result->set(CONTENT, $content);
-        $result->set(TITLE,   t("Archiv", ArchiveWidget::class));
+        $result->set(TITLE,   t("Archiv", static::class));
       }
 
       return $result;
